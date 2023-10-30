@@ -20,9 +20,6 @@ contract FotTest is DSTest, Test {
 
         vm.prank(alice);
         fot.approve(address(this), type(uint256).max);
-
-        //   fot.approve(alice, type(uint256).max); // Approve Alice to transfer her tokens
-        //  fot.approve(bob, type(uint256).max); // Approve Bob to transfer his tokens
     }
 
     function testInitialSupply() public {
