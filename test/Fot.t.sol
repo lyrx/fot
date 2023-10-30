@@ -17,7 +17,6 @@ contract FotTest is DSTest, Test {
         fot = new Fot(INITIAL_SUPPLY);
         fot.transfer(alice, TRANSFER_AMOUNT);
         fot.transfer(bob, TRANSFER_AMOUNT);
-
         vm.prank(alice);
         fot.approve(address(this), type(uint256).max);
     }
