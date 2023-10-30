@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.20;
 
 import "openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
 
@@ -10,7 +10,7 @@ contract Fot is ERC20 {
         _mint(msg.sender, initialSupply);
     }
 
-    function _transfer(address sender, address recipient, uint256 amount) internal override {
+    function _update(address sender, address recipient, uint256 amount) internal override {
         uint256 fee = (amount * transferFeePercentage) / 100;
         uint256 amountAfterFee = amount - fee;
 
