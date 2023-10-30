@@ -6,7 +6,7 @@ import "openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
 contract Fot is ERC20 {
     uint256 public transferFeePercentage = 1; // 1% fee
 
-    constructor(uint256 initialSupply) ERC20("MyToken", "MTK") {
+    constructor(uint256 initialSupply) ERC20("Marco's cool fee on transfer token", "FOT") {
         _mint(msg.sender, initialSupply);
     }
 
@@ -14,7 +14,7 @@ contract Fot is ERC20 {
         uint256 fee = (amount * transferFeePercentage) / 100;
         uint256 amountAfterFee = amount - fee;
 
-        super._transfer(sender, recipient, amountAfterFee);
-        super._transfer(sender, address(this), fee); // Transfer fee to the contract
+        super._update(sender, recipient, amountAfterFee);
+        super._update(sender, address(this), fee); // Transfer fee to the contract
     }
 }
