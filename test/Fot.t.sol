@@ -10,11 +10,12 @@ contract FotTest is DSTest, Test {
     Fot fot;
     address alice = address(0x1);
     address bob = address(0x2);
+    address feeRecipient = address(0x3); // New fee recipient address
     uint256 constant INITIAL_SUPPLY = 1000 * 10 ** 18;
     uint256 constant TRANSFER_AMOUNT = 200 * 10 ** 18;
 
     function setUp() public {
-        fot = new Fot(INITIAL_SUPPLY);
+        fot = new Fot(INITIAL_SUPPLY, feeRecipient); // Include fee recipient in constructor
         fot.transfer(alice, TRANSFER_AMOUNT);
         fot.transfer(bob, TRANSFER_AMOUNT);
         vm.prank(alice);
@@ -25,8 +26,7 @@ contract FotTest is DSTest, Test {
         assertEq(fot.totalSupply(), INITIAL_SUPPLY);
     }
 
-    function testInitialBalances() public {
-
+    function assertInitialBalances() public {
         uint256 fee = (TRANSFER_AMOUNT * fot.transferFeePercentage()) / 100;
         uint256 amountAfterFee = TRANSFER_AMOUNT - fee;
 
@@ -34,15 +34,20 @@ contract FotTest is DSTest, Test {
         uint256 actualBalanceAlice = fot.balanceOf(alice);
         uint256 actualBalanceBob = fot.balanceOf(bob);
 
+
         assertEq(actualBalanceThis, INITIAL_SUPPLY - 2 * TRANSFER_AMOUNT);
         assertEq(actualBalanceAlice, amountAfterFee);
         assertEq(actualBalanceBob, amountAfterFee);
     }
 
+    function testInitialBalances() public {
+        assertInitialBalances();
+    }
+
     function testTransferWithFee() public {
         uint256 aliceInitialBalance = fot.balanceOf(alice);
         uint256 bobInitialBalance = fot.balanceOf(bob);
-        uint256 contractInitialBalance = fot.balanceOf(address(fot));
+        uint256 feeRecipientInitialBalance = fot.balanceOf(feeRecipient); // Check fee recipient balance
 
         uint256 amount = TRANSFER_AMOUNT / 2;
         uint256 fee = (amount * fot.transferFeePercentage()) / 100;
@@ -52,11 +57,12 @@ contract FotTest is DSTest, Test {
 
         assertEq(fot.balanceOf(alice), aliceInitialBalance - amount);
         assertEq(fot.balanceOf(bob), bobInitialBalance + amountAfterFee);
-        assertEq(fot.balanceOf(address(fot)), contractInitialBalance + fee);
+        assertEq(fot.balanceOf(feeRecipient), feeRecipientInitialBalance + fee); // Check fee recipient balance
     }
 
     function testFailTransferMoreThanBalance() public {
         uint256 amount = INITIAL_SUPPLY; // More than Alice's balance
         fot.transferFrom(alice, bob, amount);
+        assertInitialBalances();
     }
 }
