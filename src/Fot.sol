@@ -24,4 +24,6 @@ contract Fot is ERC20 {
             super._update(sender, recipient, amount);
         }
     }
+
+
 }

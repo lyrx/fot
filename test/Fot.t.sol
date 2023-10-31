@@ -6,6 +6,14 @@ import "../src/Fot.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "forge-std/Test.sol";
 
+contract TestFot is Fot {
+    constructor(uint256 initialSupply, address _feeRecipient) Fot(initialSupply, _feeRecipient) {}
+
+    function testMint(address account, uint256 amount) public {
+        _mint(account, amount);
+    }
+}
+
 contract FotTest is DSTest, Test {
     Fot fot;
     address alice = address(0x1);
@@ -65,4 +73,11 @@ contract FotTest is DSTest, Test {
         fot.transferFrom(alice, bob, amount);
         assertInitialBalances();
     }
+
+
+    function testMinting() public {
+        TestFot testFot = new TestFot(INITIAL_SUPPLY, feeRecipient);
+        testFot.testMint(address(testFot), TRANSFER_AMOUNT);
+    }
+
 }
