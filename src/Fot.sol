@@ -16,6 +16,7 @@ contract Fot is ERC20 {
     /// @notice Creates a new Fot token
     /// @param initialSupply The initial supply of tokens
     /// @param _feeRecipient The address to receive the fee
+    /// @dev The constructor sets the initial supply and fee recipient address
     constructor(uint256 initialSupply, address _feeRecipient) ERC20("Marco's cool fee on transfer token", "FOT") {
         require(_feeRecipient != address(0), "Fot: Fee recipient cannot be the zero address");
         _mint(msg.sender, initialSupply);
@@ -26,6 +27,7 @@ contract Fot is ERC20 {
     /// @param sender The address sending the tokens
     /// @param recipient The address receiving the tokens
     /// @param amount The amount of tokens being transferred
+    /// @dev Calculates and applies the transfer fee, excluding minting and burning
     function _update(address sender, address recipient, uint256 amount) internal override {
         if (sender != address(0) && recipient != address(0)) { // Exclude minting and burning
             uint256 fee = (amount * transferFeePercentage) / BASIS_POINTS_DENOMINATOR;
@@ -38,4 +40,3 @@ contract Fot is ERC20 {
         }
     }
 }
-
