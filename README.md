@@ -2,6 +2,17 @@
 
 This repository contains a Solidity smart contract for an ERC20 token with a fee-on-transfer feature. Additionally, it includes Foundry tests to ensure the contract's functionality and correctness.
 
+
+
+1. RareSkills post über "Solidity Coding Standards": [hier](https://www.rareskills.io/post/solidity-style-guide)
+2.  Solidity Style Guide: [hier](https://docs.soliditylang.org/en/latest/style-guide.html)
+3. Saubere NatSpec-Kommentare: [hier](https://docs.soliditylang.org/en/latest/natspec-format.html#natspec)
+4. RareSkills Post über unit testing in Foundry: [hier](https://www.rareskills.io/post/foundry-testing-solidity)
+5. RareSkills Post über Coverage Visualization: [hier](https://www.rareskills.io/post/foundry-forge-coverage)
+
+
+
+
 ## Overview
 
 The `Fot` contract is an ERC20 token that charges a fee on each transfer. The fee is sent to a specified address, which is determined at the time of contract deployment. This README provides instructions on how to deploy the contract and run the tests using Foundry.
