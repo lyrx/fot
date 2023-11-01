@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.20;
 
-import "forge-std/console.sol";
 import "openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
 
 /// @title Marco's cool fee on transfer token
@@ -23,20 +22,28 @@ contract Fot is ERC20 {
         feeRecipient = _feeRecipient; // Set the fee recipient address
     }
 
-    /// @notice Internal function to update balances with fee
+    /// @notice Transfer tokens with fee
+    /// @param recipient The address receiving the tokens
+    /// @param amount The amount of tokens being transferred
+    /// @return success True if the transfer was successful
+    function transfer(address recipient, uint256 amount) public override returns (bool success) {
+        uint256 fee = (amount * transferFeePercentage) / BASIS_POINTS_DENOMINATOR;
+        uint256 amountAfterFee = amount - fee;
+        super.transfer(recipient, amountAfterFee);
+        super.transfer(feeRecipient, fee);
+        return true;
+    }
+
+    /// @notice Transfer tokens from one address to another with fee
     /// @param sender The address sending the tokens
     /// @param recipient The address receiving the tokens
     /// @param amount The amount of tokens being transferred
-    /// @dev Calculates and applies the transfer fee, excluding minting and burning
-    function _update(address sender, address recipient, uint256 amount) internal override {
-        if (sender != address(0) && recipient != address(0)) { // Exclude minting and burning
-            uint256 fee = (amount * transferFeePercentage) / BASIS_POINTS_DENOMINATOR;
-            uint256 amountAfterFee = amount - fee;
-
-            super._update(sender, recipient, amountAfterFee);
-            super._update(sender, feeRecipient, fee); // Transfer fee to the specified fee recipient
-        } else {
-            super._update(sender, recipient, amount);
-        }
+    /// @return success True if the transfer was successful
+    function transferFrom(address sender, address recipient, uint256 amount) public override returns (bool success) {
+        uint256 fee = (amount * transferFeePercentage) / BASIS_POINTS_DENOMINATOR;
+        uint256 amountAfterFee = amount - fee;
+        super.transferFrom(sender, recipient, amountAfterFee);
+        super.transferFrom(sender, feeRecipient, fee);
+        return true;
     }
 }

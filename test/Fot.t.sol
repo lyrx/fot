@@ -6,19 +6,14 @@ import "../src/Fot.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "forge-std/Test.sol";
 
-contract TestFot is Fot {
-    constructor(uint256 initialSupply, address _feeRecipient) Fot(initialSupply, _feeRecipient) {}
 
-    function testMint(address account, uint256 amount) public {
-        _mint(account, amount);
-    }
-}
 
 contract FotTest is DSTest, Test {
     Fot fot;
     address alice = address(0x1);
     address bob = address(0x2);
-    address feeRecipient = address(0x3); // New fee recipient address
+    address feeRecipient = address(0x3);
+    address nullAddress=address(0x0);
     uint256 constant INITIAL_SUPPLY = 1000 * 10 ** 18;
     uint256 constant TRANSFER_AMOUNT = 200 * 10 ** 18;
 
@@ -52,7 +47,7 @@ contract FotTest is DSTest, Test {
         assertInitialBalances();
     }
 
-    function testTransferWithFee() public {
+    function testTransferFromWithFee() public {
         uint256 aliceInitialBalance = fot.balanceOf(alice);
         uint256 bobInitialBalance = fot.balanceOf(bob);
         uint256 feeRecipientInitialBalance = fot.balanceOf(feeRecipient); // Check fee recipient balance
@@ -68,16 +63,37 @@ contract FotTest is DSTest, Test {
         assertEq(fot.balanceOf(feeRecipient), feeRecipientInitialBalance + fee); // Check fee recipient balance
     }
 
+    function testTransferWithFee() public {
+        uint256 aliceInitialBalance = fot.balanceOf(alice);
+        uint256 bobInitialBalance = fot.balanceOf(bob);
+        uint256 feeRecipientInitialBalance = fot.balanceOf(feeRecipient); // Check fee recipient balance
+
+        uint256 amount = TRANSFER_AMOUNT / 2;
+        uint256 fee = (amount * fot.transferFeePercentage()) / 100;
+        uint256 amountAfterFee = amount - fee;
+
+        vm.prank(alice);
+        fot.transfer( bob, amount);
+
+        assertEq(fot.balanceOf(alice), aliceInitialBalance - amount);
+        assertEq(fot.balanceOf(bob), bobInitialBalance + amountAfterFee);
+        assertEq(fot.balanceOf(feeRecipient), feeRecipientInitialBalance + fee); // Check fee recipient balance
+    }
+
+
+
+
+
     function testFailTransferMoreThanBalance() public {
-        uint256 amount = INITIAL_SUPPLY; // More than Alice's balance
-        fot.transferFrom(alice, bob, amount);
+        fot.transferFrom(alice, bob, INITIAL_SUPPLY);
         assertInitialBalances();
     }
 
 
-    function testMinting() public {
-        TestFot testFot = new TestFot(INITIAL_SUPPLY, feeRecipient);
-        testFot.testMint(address(testFot), TRANSFER_AMOUNT);
+    function testNullAddress() public {
+        vm.expectRevert();
+        fot.transferFrom(nullAddress, nullAddress, INITIAL_SUPPLY);
+
     }
 
 }
