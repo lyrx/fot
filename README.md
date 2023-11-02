@@ -2,16 +2,11 @@
 
 This repository contains a Solidity smart contract for an ERC20 token with a fee-on-transfer feature. Additionally, it includes Foundry tests to ensure the contract's functionality and correctness.
 
-
-
-1. RareSkills post über "Solidity Coding Standards": [hier](https://www.rareskills.io/post/solidity-style-guide)
-2.  Solidity Style Guide: [hier](https://docs.soliditylang.org/en/latest/style-guide.html)
-3. Saubere NatSpec-Kommentare: [hier](https://docs.soliditylang.org/en/latest/natspec-format.html#natspec)
-4. RareSkills Post über unit testing in Foundry: [hier](https://www.rareskills.io/post/foundry-testing-solidity)
-5. RareSkills Post über Coverage Visualization: [hier](https://www.rareskills.io/post/foundry-forge-coverage)
-
-
-
+1. RareSkills post about "Solidity Coding Standards": [here](https://www.rareskills.io/post/solidity-style-guide)
+2. Solidity Style Guide: [here](https://docs.soliditylang.org/en/latest/style-guide.html)
+3. Clean NatSpec Comments: [here](https://docs.soliditylang.org/en/latest/natspec-format.html#natspec)
+4. RareSkills Post about unit testing in Foundry: [here](https://www.rareskills.io/post/foundry-testing-solidity)
+5. RareSkills Post about Coverage Visualization: [here](https://www.rareskills.io/post/foundry-forge-coverage)
 
 ## Overview
 
@@ -28,6 +23,7 @@ The `FotTest` contract includes several tests to ensure the correct behavior of 
 ## Prerequisites
 
 - [Foundry](https://github.com/gakonst/foundry): Ensure you have Foundry installed. You can install it using the following command:
+
 ```
 curl -L https://foundry.paradigm.xyz | bash
 foundryup
@@ -39,7 +35,6 @@ foundryup
 1. Clone the repository: `git clone <repository-url>`
 2. Navigate to the project directory: `cd <project-directory>`
 
-
 ## Running Tests
 
 To run the tests, use the following command in the project directory:
@@ -48,23 +43,19 @@ To run the tests, use the following command in the project directory:
 forge test
 ```
 
-
 ## Checking Test Coverage
 
 To check the line coverage of the tests, use the `forge coverage` command:
-
 
 ```
 forge coverage
 ```
 
-After running this command, you can view a summary of the coverage in the terminal. 
+After running this command, you can view a summary of the coverage in the terminal.
 
-| File                 | % Lines       | % Statements   | % Branches    | % Funcs       |
-|----------------------|---------------|----------------|---------------|---------------|
-| src/Fot.sol          | 83.33% (5/6)  | 91.67% (11/12) | 50.00% (1/2)  | 100.00% (1/1) |
-
-
+| File        | % Lines      | % Statements   | % Branches   | % Funcs       |
+|-------------|--------------|----------------|--------------|---------------|
+| src/Fot.sol | 83.33% (5/6) | 91.67% (11/12) | 50.00% (1/2) | 100.00% (1/1) |
 
 ## Contract Deployment
 
