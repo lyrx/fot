@@ -2,12 +2,12 @@
 pragma solidity ^0.8.20;
 
 import "ds-test/test.sol";
-import "../src/Fot.sol";
+import "../src/FeeOnTransferToken.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "forge-std/Test.sol";
 
-contract FotTest is DSTest, Test {
-    Fot fot;
+contract FeeOnTransferTokenTest is DSTest, Test {
+    FeeOnTransferToken fot;
     address alice = address(0x1);
     address bob = address(0x2);
     address feeRecipient = address(0x3);
@@ -17,7 +17,7 @@ contract FotTest is DSTest, Test {
     uint256 private constant DEFAULT_TRANSFER_FEE_PERCENTAGE = 1; // 1% fee
 
     function setUp() public {
-        fot = new Fot(INITIAL_SUPPLY, feeRecipient,DEFAULT_TRANSFER_FEE_PERCENTAGE); // Include fee recipient in constructor
+        fot = new FeeOnTransferToken(INITIAL_SUPPLY, feeRecipient,DEFAULT_TRANSFER_FEE_PERCENTAGE); // Include fee recipient in constructor
         fot.transfer(alice, TRANSFER_AMOUNT);
         fot.transfer(bob, TRANSFER_AMOUNT);
         vm.prank(alice);
@@ -49,7 +49,6 @@ contract FotTest is DSTest, Test {
     }
 
     function testTransferWithFee() public {
-
         testTransferWithFeeInternal(alice, bob, TRANSFER_AMOUNT / 2,false);
     }
 
@@ -89,4 +88,14 @@ contract FotTest is DSTest, Test {
         vm.expectRevert();
         fot.transferFrom(nullAddress, nullAddress, INITIAL_SUPPLY);
     }
+    function testZeroTransfer() public {
+        vm.expectRevert();
+        fot.transferFrom(alice, bob, 0);
+    }
+    function testZeroTransferFrom() public {
+        vm.expectRevert();
+        vm.prank(alice);
+        fot.transfer( bob, 0);
+    }
 }
+
