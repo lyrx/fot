@@ -14,9 +14,10 @@ contract FotTest is DSTest, Test {
     address nullAddress = address(0x0);
     uint256 constant INITIAL_SUPPLY = 1000 * 10 ** 18;
     uint256 constant TRANSFER_AMOUNT = 200 * 10 ** 18;
+    uint256 private constant DEFAULT_TRANSFER_FEE_PERCENTAGE = 1; // 1% fee
 
     function setUp() public {
-        fot = new Fot(INITIAL_SUPPLY, feeRecipient); // Include fee recipient in constructor
+        fot = new Fot(INITIAL_SUPPLY, feeRecipient,DEFAULT_TRANSFER_FEE_PERCENTAGE); // Include fee recipient in constructor
         fot.transfer(alice, TRANSFER_AMOUNT);
         fot.transfer(bob, TRANSFER_AMOUNT);
         vm.prank(alice);
