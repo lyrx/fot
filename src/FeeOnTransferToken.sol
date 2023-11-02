@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.20;
 
-import "@openzeppelin-contracts@5.0.0/token/ERC20/ERC20.sol";
+
+import {ERC20} from  "@openzeppelin-contracts@5.0.0/token/ERC20/ERC20.sol";
 
 /// @title Marco's cool fee on transfer token
 /// @author Alexander Weinmann
