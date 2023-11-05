@@ -32,8 +32,7 @@ contract FeeOnTransferTokenTest is DSTest, Test {
         // Set up approvals for alice and bob to allow the fot contract to spend on their behalf
         vm.prank(alice);
         delegateToken.approve(address(fot), type(uint256).max);
-        vm.prank(bob);
-        delegateToken.approve(address(fot), type(uint256).max);
+
     }
 
     function assertInitialBalances() public {
