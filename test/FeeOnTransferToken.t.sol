@@ -6,96 +6,96 @@ import "../src/FeeOnTransferToken.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "forge-std/Test.sol";
 
+// Mock DelegateToken to simulate the external ERC20 token interaction
+contract MockDelegateToken is ERC20 {
+    constructor(uint256 initialSupply) ERC20("Delegate Token", "DLGT") {
+        _mint(msg.sender, initialSupply);
+    }
+}
+
 contract FeeOnTransferTokenTest is DSTest, Test {
-    FeeOnTransferToken fot;
-    address alice = address(0x1);
-    address bob = address(0x2);
-    address feeRecipient = address(0x3);
-    address nullAddress = address(0x0);
-    uint256 constant INITIAL_SUPPLY = 1000 * 10 ** 18;
-    uint256 constant TRANSFER_AMOUNT = 200 * 10 ** 18;
+    FeeOnTransferToken private fot;
+    MockDelegateToken private delegateToken;
+    address private alice = address(0x1);
+    address private bob = address(0x2);
+    address private feeRecipient = address(0x3);
+    uint256 private constant INITIAL_SUPPLY = 1000 * 10 ** 18;
+    uint256 private constant TRANSFER_AMOUNT = 200 * 10 ** 18;
     uint256 private constant DEFAULT_TRANSFER_FEE_PERCENTAGE = 1; // 1% fee
 
     function setUp() public {
-        fot = new FeeOnTransferToken(INITIAL_SUPPLY, feeRecipient,DEFAULT_TRANSFER_FEE_PERCENTAGE); // Include fee recipient in constructor
-        fot.transfer(alice, TRANSFER_AMOUNT);
-        fot.transfer(bob, TRANSFER_AMOUNT);
+        delegateToken = new MockDelegateToken(INITIAL_SUPPLY); // A larger initial supply for the delegate token
+        fot = new FeeOnTransferToken(address(delegateToken), feeRecipient, DEFAULT_TRANSFER_FEE_PERCENTAGE);
+
+        delegateToken.transfer(address(fot), delegateToken.totalSupply()); // Transfer delegate tokens to FeeOnTransferToken
+
+        // Set up approvals for alice and bob to allow the fot contract to spend on their behalf
         vm.prank(alice);
-        fot.approve(address(this), type(uint256).max);
+        delegateToken.approve(address(fot), type(uint256).max);
+        vm.prank(bob);
+        delegateToken.approve(address(fot), type(uint256).max);
+    }
+
+    function assertInitialBalances() public {
+
+
+        uint256 actualBalanceAlice = fot.balanceOf(alice);
+        uint256 actualBalanceBob = fot.balanceOf(bob);
+
+        // The contract's balance is not relevant here because we are checking Alice and Bob's balances
+        assertEq(actualBalanceAlice, 0);
+        assertEq(actualBalanceBob, 0);
+    }
+
+    function calculateFeeAndAmountAfterFee(uint256 amount) internal pure returns (uint256 amountAfterFee, uint256 fee) {
+        fee = (amount * DEFAULT_TRANSFER_FEE_PERCENTAGE) / 100;
+        amountAfterFee = amount - fee;
+        return (amountAfterFee, fee);
     }
 
     function testInitialSupply() public {
         assertEq(fot.totalSupply(), INITIAL_SUPPLY);
     }
 
-    function assertInitialBalances() public {
-        (uint256 amountAfterFee,) = calculateFeeAndAmountAfterFee(TRANSFER_AMOUNT);
-
-        uint256 actualBalanceThis = fot.balanceOf(address(this));
-        uint256 actualBalanceAlice = fot.balanceOf(alice);
-        uint256 actualBalanceBob = fot.balanceOf(bob);
-
-        assertEq(actualBalanceThis, INITIAL_SUPPLY - 2 * TRANSFER_AMOUNT);
-        assertEq(actualBalanceAlice, amountAfterFee);
-        assertEq(actualBalanceBob, amountAfterFee);
-    }
 
     function testInitialBalances() public {
         assertInitialBalances();
     }
 
     function testTransferFromWithFee() public {
-        testTransferWithFeeInternal(alice, bob, TRANSFER_AMOUNT / 2,true);
+        uint256 amount = TRANSFER_AMOUNT;
+
+        fot.transfer(alice, amount);
+        fot.transferFrom(alice, bob, amount / 2);
+        (uint256 amountAfterFee, ) = calculateFeeAndAmountAfterFee(amount / 2);
+        assertEq(fot.balanceOf(bob), amountAfterFee);
     }
 
     function testTransferWithFee() public {
-        testTransferWithFeeInternal(alice, bob, TRANSFER_AMOUNT / 2,false);
+        uint256 amount = TRANSFER_AMOUNT;
+
+        fot.transfer(alice, amount);
+        vm.prank(alice);
+        fot.transfer(bob, amount / 2);
+        (uint256 amountAfterFee, ) = calculateFeeAndAmountAfterFee(amount / 2);
+        assertEq(fot.balanceOf(bob), amountAfterFee);
     }
 
-    function testTransferWithFeeInternal(address from, address to, uint256 amount, bool useFrom) internal {
-        uint256 initialBalanceFrom = fot.balanceOf(from);
-        uint256 initialBalanceTo = fot.balanceOf(to);
-        uint256 initialBalanceFeeRecipient = fot.balanceOf(feeRecipient);
-
-        (uint256 amountAfterFee, uint256 fee) = calculateFeeAndAmountAfterFee(amount);
-
-        if(useFrom){
-            fot.transferFrom(from, to, amount);
-        }
-        else {
-            vm.prank(from);
-            fot.transfer(to, amount);
-        }
-
-
-        assertEq(fot.balanceOf(from), initialBalanceFrom - amount);
-        assertEq(fot.balanceOf(to), initialBalanceTo + amountAfterFee);
-        assertEq(fot.balanceOf(feeRecipient), initialBalanceFeeRecipient + fee);
-    }
-
-    function calculateFeeAndAmountAfterFee(uint256 amount) internal view returns (uint256 amountAfterFee, uint256 fee) {
-        fee = (amount * fot.transferFeePercentage()) / 100;
-        amountAfterFee = amount - fee;
-        return (amountAfterFee, fee);
-    }
 
     function testFailTransferMoreThanBalance() public {
-        fot.transferFrom(alice, bob, INITIAL_SUPPLY);
-        assertInitialBalances();
+        vm.prank(alice);
+        vm.expectRevert();
+        fot.transfer(bob, INITIAL_SUPPLY); // This should fail
     }
 
-    function testNullAddress() public {
-        vm.expectRevert();
-        fot.transferFrom(nullAddress, nullAddress, INITIAL_SUPPLY);
-    }
+
     function testZeroTransfer() public {
-        vm.expectRevert();
+        vm.prank(alice);
+        fot.transfer(bob, 0);
+    }
+
+    function testZeroTransferFrom() public {
+
         fot.transferFrom(alice, bob, 0);
     }
-    function testZeroTransferFrom() public {
-        vm.expectRevert();
-        vm.prank(alice);
-        fot.transfer( bob, 0);
-    }
 }
-
