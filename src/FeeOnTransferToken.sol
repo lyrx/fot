@@ -3,10 +3,12 @@ pragma solidity 0.8.20;
 
 
 import {IERC20} from  "@openzeppelin-contracts@5.0.0/token/ERC20/IERC20.sol";
+import  {Ownable} from "@openzeppelin-contracts@5.0.0/access/Ownable.sol";
+
 
 /// @title Marco's cool fee on transfer token
 /// @notice This contract delegates transfer calls to another ERC20 token while maintaining ERC20 interface
-contract FeeOnTransferToken {
+contract FeeOnTransferToken is Ownable {
     uint256 private constant BASIS_POINTS_DENOMINATOR = 100;
     address public feeRecipientAddress; // Address to receive the fee
     IERC20 public delegateToken;
@@ -18,8 +20,9 @@ contract FeeOnTransferToken {
     constructor(
         address _delegateTokenAddress,
         address _feeRecipientAddress,
-        uint256 _transferFeePercentage
-    )  {
+        uint256 _transferFeePercentage,
+        address initialOwner // Add this parameter
+    ) Ownable(initialOwner) {
         require(_delegateTokenAddress != address(0), "FeeOnTransferToken: Delegate token cannot be the zero address");
         require(_feeRecipientAddress != address(0), "FeeOnTransferToken: Fee recipient cannot be the zero address");
 
@@ -70,6 +73,13 @@ contract FeeOnTransferToken {
     /// @return The balance of the account
     function balanceOf(address account) public view returns (uint256) {
         return delegateToken.balanceOf(account);
+    }
+
+    // Add a getter for delegateToken that can only be called by the owner
+    /// @notice Gets the address of the delegate token
+    /// @return The address of the delegate token
+    function getDelegateToken() public view onlyOwner returns (IERC20) {
+        return delegateToken;
     }
 
 

@@ -25,13 +25,15 @@ contract FeeOnTransferTokenTest is DSTest, Test {
 
     function setUp() public {
         delegateToken = new MockDelegateToken(INITIAL_SUPPLY); // A larger initial supply for the delegate token
-        fot = new FeeOnTransferToken(address(delegateToken), feeRecipient, DEFAULT_TRANSFER_FEE_PERCENTAGE);
+        fot = new FeeOnTransferToken(address(delegateToken), feeRecipient, DEFAULT_TRANSFER_FEE_PERCENTAGE,address(this));
 
         delegateToken.transfer(address(fot), delegateToken.totalSupply()); // Transfer delegate tokens to FeeOnTransferToken
 
-        // Set up approvals for alice and bob to allow the fot contract to spend on their behalf
+
+        IERC20 adelegate = fot.getDelegateToken();
         vm.prank(alice);
-        delegateToken.approve(address(fot), type(uint256).max);
+        adelegate.approve(address(fot), type(uint256).max);
+
 
     }
 
