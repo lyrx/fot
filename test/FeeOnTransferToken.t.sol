@@ -35,10 +35,6 @@ contract FeeOnTransferTokenTest is DSTest, Test {
             DEFAULT_TRANSFER_FEE_PERCENTAGE,
             address(this)
         );
-
-        _delegateToken.transfer(address(_fot), _delegateToken.totalSupply());
-
-        IERC20(_delegateToken).approve(address(_fot), type(uint256).max);
     }
 
     /// @notice Asserts initial balances of Alice and Bob
@@ -70,24 +66,37 @@ contract FeeOnTransferTokenTest is DSTest, Test {
     /// @notice Tests transfer from Alice to Bob with fee
     function testTransferFromWithFee() public {
         uint256 amount = TRANSFER_AMOUNT;
-        _fot.transfer(ALICE, amount);
-        uint256 transferAmount = amount / 2;
-        vm.prank(ALICE);
-        _delegateToken.approve(address(_fot), transferAmount);
-        _fot.transferFrom(ALICE, BOB, transferAmount);
+        uint256 halfenedTransferAmount = amount / 2;
 
-        (uint256 amountAfterFee,) = calculateFeeAndAmountAfterFee(transferAmount);
+        _delegateToken.transfer(ALICE, halfenedTransferAmount);
+
+        vm.prank(ALICE);
+        _delegateToken.approve(address(_fot), halfenedTransferAmount);
+
+        _fot.transferFrom(ALICE, BOB, halfenedTransferAmount);
+
+        (uint256 amountAfterFee,) = calculateFeeAndAmountAfterFee(halfenedTransferAmount);
         assertEq(_fot.balanceOf(BOB), amountAfterFee, "Bob's balance should equal amount after fee");
+
     }
 
     /// @notice Tests transfer with fee
     function testTransferWithFee() public {
         uint256 amount = TRANSFER_AMOUNT;
+        uint256 halfenedAmount = amount / 2;
+
+        _delegateToken.transfer(address(_fot), amount + halfenedAmount);
 
         _fot.transfer(ALICE, amount);
-        _fot.transfer(BOB, amount / 2);
-        (uint256 amountAfterFee,) = calculateFeeAndAmountAfterFee(amount / 2);
-        assertEq(_fot.balanceOf(BOB), amountAfterFee, "Bob's balance should equal amount after fee");
+        _fot.transfer(BOB, halfenedAmount);
+
+        (uint256 AlicesAmountAfterFee,) = calculateFeeAndAmountAfterFee(amount);
+        assertEq(_fot.balanceOf(ALICE), AlicesAmountAfterFee, "Alices's balance should equal amount after fee");
+        (uint256 BobsAmountAfterFee,) = calculateFeeAndAmountAfterFee(halfenedAmount);
+        assertEq(_fot.balanceOf(BOB), BobsAmountAfterFee, "Bob's balance should equal amount after fee");
+
+
+
     }
 
     /// @notice Tests failure on attempting to transfer more than balance
