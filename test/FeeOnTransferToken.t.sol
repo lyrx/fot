@@ -6,97 +6,110 @@ import "../src/FeeOnTransferToken.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "forge-std/Test.sol";
 
-// Mock DelegateToken to simulate the external ERC20 token interaction
+/// @title Mock DelegateToken to simulate the external ERC20 token interaction
 contract MockDelegateToken is ERC20 {
     constructor(uint256 initialSupply) ERC20("Delegate Token", "DLGT") {
         _mint(msg.sender, initialSupply);
     }
 }
 
+/// @title Tests for the FeeOnTransferToken contract
 contract FeeOnTransferTokenTest is DSTest, Test {
-    FeeOnTransferToken private fot;
-    MockDelegateToken private delegateToken;
-    address private alice = address(0x1);
-    address private bob = address(0x2);
-    address private feeRecipient = address(0x3);
+    FeeOnTransferToken private _fot;
+    MockDelegateToken private _delegateToken;
+
+    address private constant ALICE = address(0x1);
+    address private constant BOB = address(0x2);
+    address private constant FEE_RECIPIENT = address(0x3);
+
     uint256 private constant INITIAL_SUPPLY = 1000 * 10 ** 18;
     uint256 private constant TRANSFER_AMOUNT = 200 * 10 ** 18;
     uint256 private constant DEFAULT_TRANSFER_FEE_PERCENTAGE = 1; // 1% fee
 
+    /// @notice Sets up the test environment
     function setUp() public {
-        delegateToken = new MockDelegateToken(INITIAL_SUPPLY); // A larger initial supply for the delegate token
-        fot = new FeeOnTransferToken(address(delegateToken), feeRecipient, DEFAULT_TRANSFER_FEE_PERCENTAGE,address(this));
+        _delegateToken = new MockDelegateToken(INITIAL_SUPPLY);
+        _fot = new FeeOnTransferToken(
+            address(_delegateToken),
+            FEE_RECIPIENT,
+            DEFAULT_TRANSFER_FEE_PERCENTAGE,
+            address(this)
+        );
 
-        delegateToken.transfer(address(fot), delegateToken.totalSupply()); // Transfer delegate tokens to FeeOnTransferToken
+        _delegateToken.transfer(address(_fot), _delegateToken.totalSupply());
 
-
-        IERC20 adelegate = fot.getDelegateToken();
-        vm.prank(alice);
-        adelegate.approve(address(fot), type(uint256).max);
-
-
+        IERC20(_delegateToken).approve(address(_fot), type(uint256).max);
     }
 
+    /// @notice Asserts initial balances of Alice and Bob
     function assertInitialBalances() public {
+        uint256 actualBalanceAlice = _fot.balanceOf(ALICE);
+        uint256 actualBalanceBob = _fot.balanceOf(BOB);
 
-
-        uint256 actualBalanceAlice = fot.balanceOf(alice);
-        uint256 actualBalanceBob = fot.balanceOf(bob);
-
-        // The contract's balance is not relevant here because we are checking Alice and Bob's balances
-        assertEq(actualBalanceAlice, 0);
-        assertEq(actualBalanceBob, 0);
+        assertEq(actualBalanceAlice, 0, "Alice's initial balance should be 0");
+        assertEq(actualBalanceBob, 0, "Bob's initial balance should be 0");
     }
 
+    /// @notice Calculates fee and amount after applying the fee
     function calculateFeeAndAmountAfterFee(uint256 amount) internal pure returns (uint256 amountAfterFee, uint256 fee) {
         fee = (amount * DEFAULT_TRANSFER_FEE_PERCENTAGE) / 100;
         amountAfterFee = amount - fee;
         return (amountAfterFee, fee);
     }
 
+    /// @notice Tests the total supply of the token
     function testInitialSupply() public {
-        assertEq(fot.totalSupply(), INITIAL_SUPPLY);
+        assertEq(_fot.totalSupply(), INITIAL_SUPPLY, "Total supply should match initial supply");
     }
 
-
+    /// @notice Tests initial balances of Alice and Bob
     function testInitialBalances() public {
         assertInitialBalances();
     }
 
+    /// @notice Tests transfer from Alice to Bob with fee
     function testTransferFromWithFee() public {
         uint256 amount = TRANSFER_AMOUNT;
+        _fot.transfer(ALICE, amount);
+        uint256 transferAmount = amount / 2;
+        vm.prank(ALICE);
+        _delegateToken.approve(address(_fot), transferAmount);
+        _fot.transferFrom(ALICE, BOB, transferAmount);
 
-        fot.transfer(alice, amount);
-        fot.transferFrom(alice, bob, amount / 2);
-        (uint256 amountAfterFee, ) = calculateFeeAndAmountAfterFee(amount / 2);
-        assertEq(fot.balanceOf(bob), amountAfterFee);
+        (uint256 amountAfterFee,) = calculateFeeAndAmountAfterFee(transferAmount);
+        assertEq(_fot.balanceOf(BOB), amountAfterFee, "Bob's balance should equal amount after fee");
     }
 
+    /// @notice Tests transfer with fee
     function testTransferWithFee() public {
         uint256 amount = TRANSFER_AMOUNT;
 
-        fot.transfer(alice, amount);
-        vm.prank(alice);
-        fot.transfer(bob, amount / 2);
-        (uint256 amountAfterFee, ) = calculateFeeAndAmountAfterFee(amount / 2);
-        assertEq(fot.balanceOf(bob), amountAfterFee);
+        _fot.transfer(ALICE, amount);
+        _fot.transfer(BOB, amount / 2);
+        (uint256 amountAfterFee,) = calculateFeeAndAmountAfterFee(amount / 2);
+        assertEq(_fot.balanceOf(BOB), amountAfterFee, "Bob's balance should equal amount after fee");
     }
 
-
+    /// @notice Tests failure on attempting to transfer more than balance
     function testFailTransferMoreThanBalance() public {
-        vm.prank(alice);
-        vm.expectRevert();
-        fot.transfer(bob, INITIAL_SUPPLY); // This should fail
+        vm.expectRevert("ERC20: transfer amount exceeds balance");
+        _fot.transfer(BOB, INITIAL_SUPPLY);
     }
 
-
+    /// @notice Tests transfer of zero tokens
     function testZeroTransfer() public {
-        vm.prank(alice);
-        fot.transfer(bob, 0);
+        _fot.transfer(BOB, 0);
     }
 
+    /// @notice Tests transfer from Alice to Bob of zero tokens
     function testZeroTransferFrom() public {
+        _fot.transferFrom(ALICE, BOB, 0);
+    }
 
-        fot.transferFrom(alice, bob, 0);
+    /// @notice Tests getDelegateToken
+   function testGetDelegateToken() public {
+       IERC20  r = _fot.getDelegateToken();
+
+       assertEq(address(r),address(_delegateToken) );
     }
 }
