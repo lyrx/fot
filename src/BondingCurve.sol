@@ -41,7 +41,8 @@ contract BondingCurve is Ownable {
     /// @param minRevenue Minimum revenue expected from the sale
     /// @return The revenue received from selling the tokens
     function sellToken(uint256 numTokens, uint256 minRevenue) public returns (uint256) {
-        require(balances[msg.sender] >= numTokens, "BondingCurve: Not enough tokens.");
+
+        require( (balances[msg.sender] >= numTokens), "BondingCurve: Not enough tokens.");
 
         uint256 revenue = calculatePrice(numTokens);
         require(revenue >= minRevenue, "BondingCurve: Revenue less than minRevenue");
@@ -49,8 +50,11 @@ contract BondingCurve is Ownable {
         // Slippage protection
         require(validateSlippage(revenue, minRevenue), "BondingCurve: Slippage too high");
 
+
         totalSupply -= numTokens;
         balances[msg.sender] -= numTokens;
+
+
         payable(msg.sender).transfer(revenue);
 
         return revenue;
