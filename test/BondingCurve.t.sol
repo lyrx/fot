@@ -19,6 +19,8 @@ contract BondingCurveTest is DSTest, Test {
         uint256 numTokens = 1;
         uint256 maxPrice = 1.05 ether;
 
+
+
         // Simulates sending Ether to the contract and calls buyToken
         bondingCurve.buyToken{value: 1 ether}(numTokens, maxPrice);
 
@@ -46,15 +48,14 @@ contract BondingCurveTest is DSTest, Test {
         bondingCurve.buyToken{value: 1.05 ether}(1, 1.05 ether);
         uint256 minRevenue = 0.99 ether;
         bondingCurve.sellToken(1, minRevenue);
-
         // Checks if the token count has been correctly reduced
-      //  assertEq(bondingCurve.totalSupply(), 0);
+         assertEq(bondingCurve.totalSupply(), 0);
     }
 
     function testFailSellTokenNotEnoughTokens() public {
         uint256 minRevenue = 0.99 ether;
         vm.prank(ALICE);
-       // vm.expectRevert("BondingCurve: Not enough tokens.");
+        // vm.expectRevert("BondingCurve: Not enough tokens.");
         bondingCurve.sellToken(1, minRevenue);
     }
 

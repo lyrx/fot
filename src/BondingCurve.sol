@@ -55,7 +55,7 @@ contract BondingCurve is Ownable {
         balances[msg.sender] -= numTokens;
 
 
-        payable(msg.sender).transfer(revenue);
+        payable(msg.sender).call{value: revenue};
 
         return revenue;
     }
