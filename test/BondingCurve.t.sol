@@ -5,7 +5,6 @@ import "ds-test/test.sol";
 import "../src/BondingCurve.sol";
 import "forge-std/Test.sol";
 
-
 contract BondingCurveTest is DSTest, Test {
     BondingCurve bondingCurve;
     address owner;
@@ -26,30 +25,47 @@ contract BondingCurveTest is DSTest, Test {
         assertEq(bondingCurve.totalSupply(), numTokens);
     }
 
-    function testFailBuyTokenSlippage() public {
-        vm.expectRevert("Maximum price too low");
+    function testFailBuyTokenNotEnoughEther() public {
+        vm.expectRevert("BondingCurve: Not enough Ether sent.");
         uint256 numTokens = 1;
-        uint256 maxPrice = 1 ether; // Sets a low maximum price to intentionally fail the test
+        uint256 maxPrice = 1.05 ether;
 
-        bondingCurve.buyToken{value: 1 ether}(numTokens, maxPrice);
+        bondingCurve.buyToken{value: 0.5 ether}(numTokens, maxPrice);
+    }
+
+    function testFailBuyTokenSlippage() public {
+        vm.expectRevert("BondingCurve: Slippage too high");
+        uint256 numTokens = 1;
+        uint256 maxPrice = 1 ether;
+
+        bondingCurve.buyToken{value: 1.05 ether}(numTokens, maxPrice);
     }
 
     function testSellTokenSuccess() public {
-        // First buy to have tokens for selling
-        bondingCurve.buyToken{value: 1 ether}(1, 1.05 ether);
-
-     //   uint256 minRevenue = 0.99 ether;
-      //  bondingCurve.sellToken(1, minRevenue);
+        bondingCurve.buyToken{value: 1.05 ether}(1, 1.05 ether);
+        uint256 minRevenue = 0.99 ether;
+        bondingCurve.sellToken(1, minRevenue);
 
         // Checks if the token count has been correctly reduced
-        // assertEq(bondingCurve.totalSupply(), 0);
+        assertEq(bondingCurve.totalSupply(), 0);
+    }
+
+    function testFailSellTokenNotEnoughTokens() public {
+        vm.expectRevert("BondingCurve: Not enough tokens.");
+        uint256 minRevenue = 0.99 ether;
+        bondingCurve.sellToken(1, minRevenue);
     }
 
     function testFailSellTokenSlippage() public {
-        vm.expectRevert("Slippage too high");
-        bondingCurve.buyToken{value: 1 ether}(1, 1.05 ether);
+        bondingCurve.buyToken{value: 1.05 ether}(1, 1.05 ether);
 
-        uint256 minRevenue = 1.05 ether; // Sets a high minimum revenue to intentionally fail the test
+        uint256 minRevenue = 1.15 ether;
+        vm.expectRevert("BondingCurve: Slippage too high");
         bondingCurve.sellToken(1, minRevenue);
+    }
+
+    function testCalculatePrice() public {
+        uint256 price = bondingCurve.calculatePrice(1);
+        assertEq(price, 1 ether);
     }
 }
