@@ -35,6 +35,11 @@ contract BondingCurveTest is DSTest, Test {
         uint256 maxPrice = 0.5 ether;
         bondingCurve.buyToken{value: 0.5 ether}(numTokens, maxPrice);
     }
+    function testFailBuyTokenLowerThanMaxPrice() public {
+        uint256 numTokens = 1;
+        uint256 maxPrice = 2 ether;
+        bondingCurve.buyToken{value: 2 ether}(numTokens, maxPrice);
+    }
 
     function testFailBuyTokenSlippageTooHigh() public {
         uint256 numTokens = 1;

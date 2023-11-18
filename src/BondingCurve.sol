@@ -24,10 +24,11 @@ contract BondingCurve is Ownable {
     /// @return The cost for the purchased tokens
     function buyToken(uint256 numTokens, uint256 maxPrice) public payable returns (uint256) {
         uint256 cost = calculatePrice(numTokens);
-        require(cost <= maxPrice, "BondingCurve: Price exceeded maxPrice");
-        require(msg.value >= cost, "BondingCurve: Not enough Ether sent.");
+        if (cost > maxPrice) revert("BondingCurve: Market price exceeds maxPrice");
+        if (msg.value < cost) revert("BondingCurve: Not enough Ether sent.");
+
         bool slippage = validateSlippage(cost, maxPrice);
-        require(slippage, "BondingCurve: Slippage too high");// Slippage protection
+        if (!slippage) revert("BondingCurve: Slippage too high");// Slippage protection
 
         totalSupply += numTokens;
         balances[msg.sender] += numTokens;
@@ -40,19 +41,16 @@ contract BondingCurve is Ownable {
     /// @param minRevenue Minimum revenue expected from the sale
     /// @return The revenue received from selling the tokens
     function sellToken(uint256 numTokens, uint256 minRevenue) public returns (uint256) {
-
-        require( (balances[msg.sender] >= numTokens), "BondingCurve: Not enough tokens.");
+        if (balances[msg.sender] < numTokens) revert("BondingCurve: Not enough tokens.");
 
         uint256 revenue = calculatePrice(numTokens);
-        require(revenue >= minRevenue, "BondingCurve: Revenue less than minRevenue");
+        if (revenue < minRevenue) revert("BondingCurve: Revenue less than minRevenue");
 
         // Slippage protection
-        require(validateSlippage(revenue, minRevenue), "BondingCurve: Slippage too high");
-
+        if (!validateSlippage(revenue, minRevenue)) revert("BondingCurve: Slippage too high");
 
         totalSupply -= numTokens;
         balances[msg.sender] -= numTokens;
-
 
         payable(msg.sender).call{value: revenue};
 
