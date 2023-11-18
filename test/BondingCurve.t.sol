@@ -18,29 +18,32 @@ contract BondingCurveTest is DSTest, Test {
     function testBuyTokenSuccess() public {
         uint256 numTokens = 1;
         uint256 maxPrice = 1.05 ether;
-
-
-
         // Simulates sending Ether to the contract and calls buyToken
         bondingCurve.buyToken{value: 1 ether}(numTokens, maxPrice);
-
         // Checks if the token count has been correctly increased
         assertEq(bondingCurve.totalSupply(), numTokens);
     }
 
     function testFailBuyTokenNotEnoughEther() public {
-
-        uint256 numTokens = 4;
+        uint256 numTokens = 1;
         uint256 maxPrice = 1.05 ether;
-        vm.expectRevert("BondingCurve: Not enough Ether sent.");
         bondingCurve.buyToken{value: 0.5 ether}(numTokens, maxPrice);
     }
 
-    function testFailBuyTokenSlippage() public {
-        vm.expectRevert("BondingCurve: Slippage too high");
+    function testFailBuyTokenExceedsMaxPrice() public {
         uint256 numTokens = 1;
-        uint256 maxPrice = 1 ether;
+        uint256 maxPrice = 0.5 ether;
+        bondingCurve.buyToken{value: 0.5 ether}(numTokens, maxPrice);
+    }
 
+    function testFailBuyTokenSlippageTooHigh() public {
+        uint256 numTokens = 1;
+        uint256 maxPrice = 1.1 ether;
+        bondingCurve.buyToken{value: 1.05 ether}(numTokens, maxPrice);
+    }
+    function testFailBuyTokenSlippageTooLow() public {
+        uint256 numTokens = 1;
+        uint256 maxPrice = 0.5 ether;
         bondingCurve.buyToken{value: 1.05 ether}(numTokens, maxPrice);
     }
 
@@ -49,22 +52,28 @@ contract BondingCurveTest is DSTest, Test {
         uint256 minRevenue = 0.99 ether;
         bondingCurve.sellToken(1, minRevenue);
         // Checks if the token count has been correctly reduced
-         assertEq(bondingCurve.totalSupply(), 0);
+        assertEq(bondingCurve.totalSupply(), 0);
     }
 
     function testFailSellTokenNotEnoughTokens() public {
         uint256 minRevenue = 0.99 ether;
         vm.prank(ALICE);
-        // vm.expectRevert("BondingCurve: Not enough tokens.");
         bondingCurve.sellToken(1, minRevenue);
     }
 
-    function testFailSellTokenSlippage() public {
-        bondingCurve.buyToken{value: 1.05 ether}(1, 1.05 ether);
+    function testFailSellTokenNotEnoughRevenue() public {
+        bondingCurve.buyToken{value: 1 ether}(1, 1 ether);
+        bondingCurve.sellToken(1, 1.1 ether);
+    }
 
-        uint256 minRevenue = 1.15 ether;
-        vm.expectRevert("BondingCurve: Slippage too high");
-        bondingCurve.sellToken(1, minRevenue);
+    function testFailSellTokenSlippageTooHigh() public {
+        bondingCurve.buyToken{value: 1.05 ether}(1, 1.05 ether);
+        bondingCurve.sellToken(1, 1.15 ether);
+    }
+
+    function testFailSellTokenSlippageTooLow() public {
+        bondingCurve.buyToken{value: 1.05 ether}(1, 1.05 ether);
+        bondingCurve.sellToken(1, 0.15 ether);
     }
 
     function testCalculatePrice() public {

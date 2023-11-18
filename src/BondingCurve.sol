@@ -26,9 +26,8 @@ contract BondingCurve is Ownable {
         uint256 cost = calculatePrice(numTokens);
         require(cost <= maxPrice, "BondingCurve: Price exceeded maxPrice");
         require(msg.value >= cost, "BondingCurve: Not enough Ether sent.");
-
-        // Slippage protection
-        require(validateSlippage(cost, maxPrice), "BondingCurve: Slippage too high");
+        bool slippage = validateSlippage(cost, maxPrice);
+        require(slippage, "BondingCurve: Slippage too high");// Slippage protection
 
         totalSupply += numTokens;
         balances[msg.sender] += numTokens;
@@ -74,7 +73,8 @@ contract BondingCurve is Ownable {
     function validateSlippage(uint256 actualValue, uint256 expectedValue) private pure returns (bool) {
         uint256 slippage = (actualValue > expectedValue) ?
             ((actualValue - expectedValue) * 100) / expectedValue :
-            ((expectedValue - actualValue) * 100) / actualValue;
+            ((expectedValue - actualValue) * 100) / expectedValue;
+
         return slippage <= MAX_SLIPPAGE;
     }
 }
