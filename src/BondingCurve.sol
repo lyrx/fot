@@ -24,26 +24,14 @@ contract BondingCurve is Ownable {
     /// @return The cost for the purchased tokens
     function buyToken(uint256 numTokens, uint256 maxPrice) public payable returns (uint256) {
         uint256 cost = calculatePrice(numTokens);
+        if (cost > maxPrice) revert("BondingCurve: Market price exceeds maxPrice");
+        if (msg.value < cost) revert("BondingCurve: Not enough Ether sent.");
 
+        bool slippage = validateSlippage(cost, maxPrice);
+        if (!slippage) revert("BondingCurve: Slippage too high");// Slippage protection
 
-        if (cost > maxPrice) {
-
-        } else if (msg.value < cost) {
-
-        }
-        else {
-            bool slippage = validateSlippage(cost, maxPrice);
-            if (!slippage) {
-
-            }
-            else {
-                totalSupply += numTokens;
-                balances[msg.sender] += numTokens;
-            }
-
-
-        }
-
+        totalSupply += numTokens;
+        balances[msg.sender] += numTokens;
 
         return cost;
     }
@@ -53,18 +41,20 @@ contract BondingCurve is Ownable {
     /// @param minRevenue Minimum revenue expected from the sale
     /// @return The revenue received from selling the tokens
     function sellToken(uint256 numTokens, uint256 minRevenue) public returns (uint256) {
+        if (balances[msg.sender] < numTokens) revert("BondingCurve: Not enough tokens.");
+
         uint256 revenue = calculatePrice(numTokens);
+        if (revenue < minRevenue) revert("BondingCurve: Revenue less than minRevenue");
 
-        if (revenue >= minRevenue && validateSlippage(revenue, minRevenue) && balances[msg.sender] >= numTokens ) {
-            totalSupply -= numTokens;
-            balances[msg.sender] -= numTokens;
-            payable(msg.sender).call{value : revenue};
-            return revenue;
-        }
-        else
-        return 0;
+        // Slippage protection
+        if (!validateSlippage(revenue, minRevenue)) revert("BondingCurve: Slippage too high");
 
+        totalSupply -= numTokens;
+        balances[msg.sender] -= numTokens;
 
+        payable(msg.sender).call{value: revenue};
+
+        return revenue;
     }
 
     /// @notice Calculates the price for a given number of tokens
